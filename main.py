@@ -12,7 +12,7 @@ WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
-MOD_SIZE = 50
+MOD_SIZE = 15
 
 
 class Player(pygame.sprite.Sprite):
@@ -24,7 +24,8 @@ class Player(pygame.sprite.Sprite):
         self.rect.center = (x, y)
         self.step_x = step_x
         self.step_y = step_y
-    
+
+
     def update (self):
         self.speedx = 0
         keystate = pygame.key.get_pressed()
@@ -34,27 +35,41 @@ class Player(pygame.sprite.Sprite):
         if keystate[pygame.K_RIGHT] and self.rect.right < WIDTH:
             self.speedx = 8
             
-        # if self.rect.right >= WIDTH:
-        #     self.speedx = 0
-        
-        # if self.rect.left <= 0:
-        #     self.speedx = 0
         self.rect.x += self.speedx    
-class MOD(pygame.sprite.Sprite):
-    def __init__(self, color=RED, x=WIDTH/2, y=HEIGHT/2, step_x=5, step_y=5):
+
+
+class Mod(pygame.sprite.Sprite):
+    def __init__(self, color=RED, x=WIDTH/2, y=HEIGHT/2, step_x=3, step_y=8):
         pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface((MOD_SIZE, 50))
+        self.image = pygame.Surface((MOD_SIZE, MOD_SIZE))
         self.image.fill(color)
         self.rect = self.image.get_rect()
-        self.rect.center = (random.randrange(0, WIDTH), -MOD_SIZE)
+        center_x = random.randrange(int(MOD_SIZE/2), int(WIDTH-MOD_SIZE/2))
+        center_y = random.randrange(-HEIGHT, 0) - MOD_SIZE
+        self.rect.center = (center_x, center_y)
+        # self.rect.center = (random.randrange(0, WIDTH), -MOD_SIZE)
         self.step_x = step_x
         self.step_y = step_y
+
     
     def update (self):
-        self.rect.y += 5
+        self.rect.y += self.step_y
+        self.rect.x += self.step_x
         if self.rect.top >= HEIGHT:
-            self.rect.y = -50
-            
+            center_x = random.randrange(int(MOD_SIZE/2), int(WIDTH-MOD_SIZE/2))
+            center_y = -MOD_SIZE
+            self.rect.center = (center_x, center_y)
+        if self.rect.left <= 0:
+            self.step_x = abs(self.step_x)
+        if self.rect.right >= WIDTH:
+            self.step_x = -abs(self.step_x)    
+
+        
+        
+
+         
+
+           
         # if self.rect.right >= WIDTH:
         #     self.speedx = 0
         
@@ -64,16 +79,16 @@ class MOD(pygame.sprite.Sprite):
 
 
     # def update(self):
-    #     self.rect.y += self.step_y
-    #     self.rect.x += self.step_x
-    #     if self.rect.bottom >= HEIGHT:
-    #         self.step_y = -abs(self.step_y)
-    #     if self.rect.top <= 0:
-    #         self.step_y = abs(self.step_y)
-    #     if self.rect.right >= WIDTH:
-    #         self.step_x = -abs(self.step_x)      
-    #     if self.rect.left <= 0:
-    #         self.step_x = abs(self.step_x) 
+        # self.rect.y += self.step_y
+        # self.rect.x += self.step_x
+        # if self.rect.bottom >= HEIGHT:
+        #     self.step_y = -abs(self.step_y)
+        # if self.rect.top <= 0:
+        #     self.step_y = abs(self.step_y)
+        # if self.rect.right >= WIDTH:
+        #     self.step_x = -abs(self.step_x)      
+        # if self.rect.left <= 0:
+        #     self.step_x = abs(self.step_x) 
 
     # def update(self):
     #     self.rect.y += self.step_y
@@ -123,27 +138,20 @@ class MOD(pygame.sprite.Sprite):
 pygame.init()
 # pygame.mixer.init() # звук может не работать
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-# screen = pygame.display.set_mode((HEIGHT, WIDTH))
-# screen = pygame.display.set_mode((480, 480))
 
 pygame.display.set_caption("My Cats")
 clock = pygame.time.Clock()
 all_sprites = pygame.sprite.Group()
+
 player = Player(color=GREEN, y=HEIGHT-25)
-# player2 = Player(color=BLUE, y=HEIGHT/4, step_x=-1)
-# player3 = Player(RED, WIDTH/4, HEIGHT/8, step_y=-4)
-# player4 = Player(RED, WIDTH/4, 3*HEIGHT, step_y=-4)
 all_sprites.add(player)
-# all_sprites.add(player2)
-# all_sprites.add(player3)
-# all_sprites.add(player4)
-mod = MOD()
-all_sprites.add(mod)
+
 mods = pygame.sprite.Group()
-for i in range(8):
-    m = MOD()
-    all_sprites.add(m)
-    mods.add(m)
+for i in range(4):
+    mod = Mod()
+    all_sprites.add(mod)
+    mods.add(mod)
+
 # Цикл игры
 running = True
 while running:
