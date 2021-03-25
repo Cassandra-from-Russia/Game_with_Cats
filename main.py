@@ -10,6 +10,9 @@ HEIGHT = 480
 FPS = 30
 LEVEL = 1
 COUNT = 0
+LIFE_START = 5
+LIFE = LIFE_START
+calichestvo = 4
 
 # Задаем цвета
 BLACK = (0, 0, 0)
@@ -32,6 +35,7 @@ background_rect = background.get_rect()
 
 cat = pygame.image.load(path.join(img_dir,'Cat_02_red_goes_left.png')).convert_alpha()
 drop = pygame.image.load(path.join(img_dir,'water_drop_05.png')).convert_alpha()
+Fire = pygame.image.load(path.join(img_dir,'Fire.png')).convert_alpha()
 font_name = pygame.font.match_font('arial')
 def draw_text(surf, text, size, x, y):
     font = pygame.font.Font(font_name, size)
@@ -45,7 +49,14 @@ def show_go_screen():
     draw_text(screen, "GAME OVER!", 64, WIDTH / 2, HEIGHT / 4)
     draw_text(screen, "Press a key to begin", 18, WIDTH / 2, HEIGHT * 3 / 4)
     pygame.display.flip()
-
+    waiting = True
+    while waiting:
+        clock.tick(FPS)
+        for event in pygame.event.get():
+            if event.type==pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.KEYDOWN:
+                waiting = False    
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, color=GREEN, x=WIDTH/2, y=HEIGHT/2, step_x=5, step_y=5):
@@ -68,8 +79,13 @@ class Player(pygame.sprite.Sprite):
         if keystate[pygame.K_RIGHT] and self.rect.right < WIDTH:
             self.speedx = 8
             
-        self.rect.x += self.speedx    
-
+        self.rect.x += self.speedx
+    def shoot(self):
+        bullet = Bullet(self.rect.centerx, self.rect.top)
+        all_sprites.add(bullet)
+        bullets.add(bullet)
+        
+                    
 
 class Mod(pygame.sprite.Sprite):
     def __init__(self, color=RED, x=WIDTH/2, y=HEIGHT/2, step_x=3, step_y=8):
@@ -95,88 +111,60 @@ class Mod(pygame.sprite.Sprite):
         if self.rect.left <= 0:
             self.step_x = abs(self.step_x)
         if self.rect.right >= WIDTH:
-            self.step_x = -abs(self.step_x)    
+            self.step_x = -abs(self.step_x)
 
+class Bullet(pygame.sprite.Sprite):
+    def __init__(self,x,y):
+        pygame.sprite.Sprite.__init__(self)
+        self.speedy = -10
+        # self.image = pygame.Surface((10, 20))
+        # self.image.fill(GREEN)
+        self.image = pygame.transform.scale(Fire,(50,38))
+        self.rect = self.image.get_rect()
+        self.rect.bottom = y
+        self.rect.centerx = x
+        self.speedy = -10
+
+    def update (self):
+        self.rect.y += self.speedy
+        # kill if it moves off the top of the screen
+        if self.rect.top <= 0:
+            self.kill()
         
-        # if self.rect.right >= WIDTH:
-        #     self.speedx = 0
-        
-        # if self.rect.left <= 0:
-        #     self.speedx = 0
-        # self.rect.x += self.speedx    
-
-
-    # def update(self):
-        # self.rect.y += self.step_y
-        # self.rect.x += self.step_x
-        # if self.rect.bottom >= HEIGHT:
-        #     self.step_y = -abs(self.step_y)
-        # if self.rect.top <= 0:
-        #     self.step_y = abs(self.step_y)
-        # if self.rect.right >= WIDTH:
-        #     self.step_x = -abs(self.step_x)      
-        # if self.rect.left <= 0:
-        #     self.step_x = abs(self.step_x) 
-
-    # def update(self):
-    #     self.rect.y += self.step_y
-    #     self.rect.x += self.step_x
-    #     if self.rect.bottom >= HEIGHT:
-    #         self.step_y = -5
-    #     if self.rect.top <= 0:
-    #         self.step_y = 5
-    #     if self.rect.left <= 0:
-    #         self.step_x = +5 
-    #     if self.rect.right >= WIDTH:
-    #         self.step_x = -5  
-
-    # def update(self):
-    #     self.rect.y += self.step
-    #     if self.rect.bottom >= HEIGHT:
-    #         self.step = -5
-    #     if self.rect.top <= 0:
-    #         self.step = 5
-    
-    # # def update(self):   
-    #     self.rect.x += self.step
-    #     if self.rect.right >= WIDTH:
-    #         self.step = -5
-    #     if self.rect.left <= 0:
-    #         self.step = 5
-    
-
-
-    # def update(self):
-    #     self.rect.x += self.step
-    #     if self.rect.right >= WIDTH:
-    #        self.rect.x = 0
-       
-    # def update(self):
-    #     self.rect.y -= 5
-    #     if self.rect.top <= 0:
-    #         self.rect.bottom = HEIGHT
-    
-    # def update(self):
-    #     self.rect.y += 5
-    #     if self.rect.bottom >= HEIGHT:
-    #         self.rect.y = 0
 
 
 all_sprites = pygame.sprite.Group()
-
+bullets = pygame.sprite.Group()
 player = Player(color=GREEN, y=HEIGHT-25)
 all_sprites.add(player)
 
 mods = pygame.sprite.Group()
-for i in range(4):
+for i in range(calichestvo):
     mod = Mod()
     all_sprites.add(mod)
     mods.add(mod)
+game_over = False
 
+          
 # Цикл игры
 running = True
 while running:
     COUNT += 1
+    if game_over:
+        show_go_screen()
+        game_over = False 
+        all_sprites = pygame.sprite.Group()
+        bullets = pygame.sprite.Group()
+        player = Player(color=GREEN, y=HEIGHT-25)
+        all_sprites.add(player)
+        LIFE = LIFE_START
+
+        mods = pygame.sprite.Group()
+        for i in range(calichestvo):
+            mod = Mod()
+            all_sprites.add(mod)
+            mods.add(mod)
+
     
     # Держим цикл на правильной скорости
     clock.tick(FPS)
@@ -185,21 +173,45 @@ while running:
     for event in pygame.event.get():
         if event.type==pygame.QUIT:
             running=False
-    
+        elif event.type == pygame.KEYDOWN:
+          if event.key == pygame.K_SPACE:
+            player.shoot()
     # Обновление
     all_sprites.update()
-    hits = pygame.sprite.spritecollide(player,mods,False)
+    hits = pygame.sprite.spritecollide(player,mods,True)
     if hits:
-        running = False
-    if COUNT == 100 * LEVEL:
+        m = Mod()       
+        all_sprites.add(m)
+        mods.add(m)
+        LIFE -= 1
+        if LIFE <= 0:
+            game_over = True
+            
+    hits1 = pygame.sprite.groupcollide(mods,bullets,True,True)
+    for hit in hits1:
+        m = Mod()       
+        all_sprites.add(m)
+        mods.add(m)
+    if COUNT == 500 * LEVEL:
         LEVEL += 1
+
     # Рендеринг
     screen.fill(BLACK)
     screen.blit(background,background_rect)
     all_sprites.draw(screen)
-    draw_text(screen,str('Level') + str(LEVEL) ,28,WIDTH/2,60)
+    draw_text(screen,str('Level: ') + str(LEVEL) ,28,WIDTH/2,20)
+    draw_text(screen,str('Life: ') + str(LIFE) ,28,WIDTH/2,50)
 
     # После отрисовки всего, переворачиваем (вскрываем) экран
     pygame.display.flip()
 
 # не забываем закрывать игру
+
+# show_end_screen = True
+# while show_end_screen:
+#     show_go_screen()
+#     for event in pygame.event.get():
+
+#         if event.type==pygame.QUIT:
+#             show_end_screen = False
+    
